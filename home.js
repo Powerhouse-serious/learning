@@ -16,3 +16,4 @@ button.style.borderRadius = "8px";
 button.style.cursor = "pointer";
 
 // Add button to the body
+document.body.appendChild(button);

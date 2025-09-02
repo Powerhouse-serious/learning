@@ -1,13 +1,13 @@
 document.body.style.backgroundColor = "#222"; // dark gray
 
 // --- Constants ---
-const CHUNK_SIZE = 256; // px
+const CHUNK_SIZE = 256; // px (doubled for larger tiles)
 const CHUNK_RADIUS = 6; // chunks loaded in each direction
 const VISIBLE_RADIUS = 4; // chunks visible
 const PLAYER_SPEED = 4; // px per frame
 const BLAST_SPEED = 12; // px per frame
 const BLAST_RANGE = CHUNK_SIZE * 2; // 2 chunks
-const CHUNK_TEXTURE = "https://www.art.eonworks.com/free/textures/funky_ground_texture_04-512x512.png";
+const CHUNK_TEXTURE = "https://www.art.eonworks.com/free/textures/funky_ground_texture_09-512x512.png";
 
 // --- State ---
 let playerPos = { x: 0, y: 0 };
@@ -242,9 +242,12 @@ function loadChunks(center) {
       }
     }
   }
-  // Remove old chunks
+  // Remove old chunks far away (outside CHUNK_RADIUS + 2)
   for (const [key, chunk] of chunks.entries()) {
-    if (!newChunks.has(key)) {
+    const [cx, cy] = key.split(',').map(Number);
+    const pcx = Math.floor(center.x / CHUNK_SIZE);
+    const pcy = Math.floor(center.y / CHUNK_SIZE);
+    if (Math.abs(cx - pcx) > CHUNK_RADIUS + 2 || Math.abs(cy - pcy) > CHUNK_RADIUS + 2) {
       chunk.remove();
     }
   }
@@ -281,6 +284,7 @@ function movePlayer() {
 // --- Magical Blast ---
 function shootBlast() {
   if (lastDir.x === 0 && lastDir.y === 0) return;
+  // Center of player sprite
   blasts.push({
     x: playerPos.x,
     y: playerPos.y,
@@ -308,4 +312,18 @@ function gameLoop() {
   floor.style.top = `${screenH / 2 - playerPos.y}px`;
 
   // Update blasts
-  for (let i = blasts.length - 1; i >= 0; i--
+  for (let i = blasts.length - 1; i >= 0; i--) {
+    const b = blasts[i];
+    b.x += b.dx * BLAST_SPEED;
+    b.y += b.dy * BLAST_SPEED;
+    b.dist += BLAST_SPEED;
+    b.el.style.left = `${b.x - playerPos.x + screenW / 2 - 12}px`;
+    b.el.style.top = `${b.y - playerPos.y + screenH / 2 - 12}px`;
+    if (b.dist > BLAST_RANGE) {
+      b.el.remove();
+      blasts.splice(i, 1);
+    }
+  }
+
+  requestAnimationFrame(gameLoop);
+}
